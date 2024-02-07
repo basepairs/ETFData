@@ -1,7 +1,7 @@
 from flask import Flask, jsonify
-from alltickers import get_all_etfs
+from functions.alltickers import get_all_etfs
+from functions.shareprice import get_stock_info
 from functions.overlap import calculate_overlap_percentage, calculate_overlap_tickers
-from shareprice import get_stock_info
 from flask_cors import CORS
 from collections import defaultdict
 
