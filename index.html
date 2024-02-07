@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Server Frontend</title>
+    <!-- Include Select2 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0/css/select2.min.css" rel="stylesheet"/>
+
+    <!-- Include jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div>
+        <label for="select1">Select ETF 1:</label>
+        <select id="select1" class="select2" style="width: 200px;"></select>
+    </div>
+    <div>
+        <label for="select2">Select ETF 2:</label>
+        <select id="select2" class="select2" style="width: 200px;"></select>
+    </div>
+    <button onclick="calculateOverlap()">Calculate Overlap</button>
+    <div id="overlapPercentage"></div>
+    <div id="overlapTickers"></div>
+
+    <!-- Include Select2 JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0/js/select2.min.js"></script>
+    
+    <!-- Your custom JavaScript code -->
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2 for the dropdowns
+            $('.select2').select2({
+                ajax: {
+                    url: 'http://127.0.0.1:2005/all_etfs',
+                    dataType: 'json',
+                    delay: 250,
+                    processResults: function(data) {
+                        var tickers = [];
+                        for (var provider in data) {
+                            if (data.hasOwnProperty(provider)) {
+                                tickers.push(...data[provider]);
+                            }
+                        }
+                        return {
+                            results: tickers.map(function(ticker) {
+                                return { id: ticker, text: ticker };
+                            })
+                        };
+                    },
+                    cache: true
+                }
+            });
+
+            // Preload dropdowns with data on page load
+            $.ajax({
+                url: 'http://127.0.0.1:2005/all_etfs',
+                dataType: 'json',
+                success: function(data) {
+                    var tickers = [];
+                    for (var provider in data) {
+                        if (data.hasOwnProperty(provider)) {
+                            tickers.push(...data[provider]);
+                        }
+                    }
+                    // Add data to the dropdowns
+                    $('#select1').append(tickers.map(function(ticker) {
+                        return $('<option>', { value: ticker, text: ticker });
+                    }));
+                    $('#select2').append(tickers.map(function(ticker) {
+                        return $('<option>', { value: ticker, text: ticker });
+                    }));
+                }
+            });
+        });
+
+        function calculateOverlap() {
+            var ticker1 = $('#select1').val();
+            var ticker2 = $('#select2').val();
+
+            if (!ticker1 || !ticker2) {
+                alert('Please select two ETFs.');
+                return;
+            }
+
+            $.get(`http://127.0.0.1:2005/overlap_percentage/${ticker1}/${ticker2}`, function(data) {
+                $('#overlapPercentage').text('Overlap Percentage: ' + data.overlap_percentage + '%');
+            });
+
+            $.get(`http://127.0.0.1:2005/overlap_tickers/${ticker1}/${ticker2}`, function(data) {
+                $('#overlapTickers').html('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+            });
+        }
+    </script>
+</body>
+</html>
